@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import traceback
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import replace
@@ -262,6 +263,9 @@ def analyze_projects(
     progress.update(task, total=file_count)
     bold = "[bold]" if verbose else ""
 
+    wait_seconds = 0.01
+    print(f">>>> Will wait for {wait_seconds}s after each format.", flush=True)
+
     def check_project_files(
         files: List[Path], project_path: Path, mode: "black.Mode"
     ) -> ProjectResults:
@@ -273,6 +277,7 @@ def analyze_projects(
             file_results[filepath] = result
             progress.advance(task)
             progress.advance(project_task)
+            time.sleep(wait_seconds)
         return ProjectResults(file_results)
 
     # Sadly the Pool context manager API doesn't play nice with pytest-cov so
