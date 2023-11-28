@@ -255,6 +255,7 @@ def analyze_projects(
 ) -> Dict[str, ProjectResults]:
     # Slow import, let's not pay all of the time (this makes show and friends faster).
     import multiprocessing
+    import platform
 
     # For consistency w/ Windows so things don't unintentionally work only on Linux.
     mp = multiprocessing.get_context("spawn")
@@ -264,6 +265,8 @@ def analyze_projects(
     bold = "[bold]" if verbose else ""
 
     wait_seconds = 0.01
+    print(f">>>> {multiprocessing.cpu_count()=}")
+    print(f">>>> {platform.processor()=}")
     print(f">>>> Will wait for {wait_seconds}s after each format.", flush=True)
 
     def check_project_files(
