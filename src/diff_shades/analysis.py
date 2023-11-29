@@ -12,6 +12,7 @@ from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import replace
 from functools import lru_cache, partial
 from pathlib import Path
+import psutil
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
 if sys.version_info >= (3, 8):
@@ -281,6 +282,7 @@ def analyze_projects(
             progress.advance(task)
             progress.advance(project_task)
             time.sleep(wait_seconds)
+            print(f'>>>> {psutil.virtual_memory()=}', flush=True)
         return ProjectResults(file_results)
 
     # Sadly the Pool context manager API doesn't play nice with pytest-cov so

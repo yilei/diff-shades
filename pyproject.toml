@@ -32,6 +32,7 @@ dependencies = [
     # Very odd bug: https://github.com/Textualize/rich/issues/2053
     "rich != 12.0.0; sys_platform == 'win32'",
     "typing-extensions >= 3.7.4; python_version < '3.8'",
+    "psutil",
 ]
 
 dynamic = ["version", "description"]
