@@ -286,7 +286,7 @@ def analyze_projects(
     # Sadly the Pool context manager API doesn't play nice with pytest-cov so
     # we have to use this uglier alternative ...
     # https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html#if-you-use-multiprocessing-pool
-    pool = mp.Pool()
+    pool = mp.Pool(processes=2)
     try:
         results = {}
         for project, files, mode in projects:
