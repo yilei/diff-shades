@@ -265,10 +265,8 @@ def analyze_projects(
     progress.update(task, total=file_count)
     bold = "[bold]" if verbose else ""
 
-    wait_seconds = 0.01
     print(f">>>> {multiprocessing.cpu_count()=}")
     print(f">>>> {platform.processor()=}")
-    print(f">>>> Will wait for {wait_seconds}s after each format.", flush=True)
 
     def check_project_files(
         files: List[Path], project_path: Path, mode: "black.Mode"
@@ -281,16 +279,13 @@ def analyze_projects(
             file_results[filepath] = result
             progress.advance(task)
             progress.advance(project_task)
-            time.sleep(wait_seconds)
             print(f'>>>> {psutil.virtual_memory()=}', flush=True)
         return ProjectResults(file_results)
 
     # Sadly the Pool context manager API doesn't play nice with pytest-cov so
     # we have to use this uglier alternative ...
     # https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html#if-you-use-multiprocessing-pool
-    NUM_PROCESSES = 8
-    print(f'>>>> Using {NUM_PROCESSES=}')
-    pool = mp.Pool(processes=NUM_PROCESSES)
+    pool = mp.Pool()
     try:
         results = {}
         for project, files, mode in projects:
