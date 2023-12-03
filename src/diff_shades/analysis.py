@@ -6,8 +6,8 @@ import os
 import shutil
 import subprocess
 import sys
-import time
 import traceback
+from concurrent import futures
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import replace
 from functools import lru_cache, partial
@@ -269,35 +269,37 @@ def analyze_projects(
     print(f">>>> {platform.processor()=}")
 
     def check_project_files(
-        files: List[Path], project_path: Path, mode: "black.Mode"
+        executor: futures.ProcessPoolExecutor,
+        files: List[Path],
+        project_path: Path,
+        mode: "black.Mode",
     ) -> ProjectResults:
         file_results = {}
-        data_packets = [(file_path, project_path, mode) for file_path in files]
-        for filepath, result in pool.imap(check_file_shim, data_packets):
+        fs = [
+            executor.submit(check_file_shim, (file_path, project_path, mode))
+            for file_path in files
+        ]
+        for future in fs:
+            filepath, result = future.result()
             if verbose:
                 console.log(f"  {filepath}: [{result.type}]{result.type}")
             file_results[filepath] = result
             progress.advance(task)
             progress.advance(project_task)
-            print(f'>>>> {psutil.virtual_memory()=}', flush=True)
+            print(f">>>> {psutil.virtual_memory()=}", flush=True)
         return ProjectResults(file_results)
 
-    # Sadly the Pool context manager API doesn't play nice with pytest-cov so
-    # we have to use this uglier alternative ...
-    # https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html#if-you-use-multiprocessing-pool
-    pool = mp.Pool()
-    try:
+    with futures.ProcessPoolExecutor() as executor:
         results = {}
         for project, files, mode in projects:
             project_task = progress.add_task(f"[bold]╰─> {project.name}", total=len(files))
             if verbose:
                 console.log(f"[bold]Checking {project.name} ({len(files)} files)")
-            results[project.name] = check_project_files(files, work_dir / project.name, mode)
+            results[project.name] = check_project_files(
+                executor, files, work_dir / project.name, mode
+            )
             overall_result = results[project.name].overall_result
             console.log(f"{bold}{project.name} finished as [{overall_result}]{overall_result}")
             progress.remove_task(project_task)
-    finally:
-        pool.close()
-        pool.join()
 
     return results
